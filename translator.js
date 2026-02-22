@@ -9,33 +9,58 @@ for (let i = 0; i < lenOf; i++) {
     }
 }
 
+// Embedded language configuration (avoids CORS issues)
+const ZLANG_CONFIG = {
+    "en": {
+        "title": "My Website",
+        "greeting": "Hello",
+        "name": "User",
+        "farewell": "Goodbye"
+    },
+    "es": {
+        "title": "Mi Sitio Web",
+        "greeting": "Hola",
+        "name": "Usuario",
+        "farewell": "Adiós"
+    },
+    "fr": {
+        "title": "Mon site web",
+        "greeting": "Bonjour",
+        "name": "Utilisateur",
+        "farewell": "Au revoir"
+    }
+};
+
+// Embedded image configuration for language-specific images
+const ZLANG_IMAGES = {
+    // Example structure:
+    // "en": {
+    //     "logo": "./images/logo-en.png",
+    //     "banner": "./images/banner-en.jpg"
+    // },
+    // "es": {
+    //     "logo": "./images/logo-es.png",
+    //     "banner": "./images/banner-es.jpg"
+    // }
+};
+
 class zlanguageTranslator {
     constructor(zlangu) {
         this.language = zlangu;
-        this.configFile = './langConfig.json';
-        this.availableLangsData = null;
+        this.availableLangsData = ZLANG_CONFIG;
+        this.imageData = ZLANG_IMAGES;
     }
 
-    async availableLanguage() {
-        if (this.availableLangsData) {
-            return this.availableLangsData;
-        }
-
-        try {
-            const response = await fetch(this.configFile);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            this.availableLangsData = await response.json();
-            return this.availableLangsData;
-        } catch (error) {
-            console.error("Error fetching language configuration:", error);
-            return null;
-        }
+    availableLanguage() {
+        return this.availableLangsData;
     }
 
-    async translateText(key) {
-        const availableLangs = await this.availableLanguage();
+    availableImages() {
+        return this.imageData;
+    }
+
+    translateText(key) {
+        const availableLangs = this.availableLanguage();
         if (!availableLangs) {
             return "Error: Language data not loaded.";
         }
@@ -51,52 +76,74 @@ class zlanguageTranslator {
         }
     }
 
-    async translatePage() {
-        const zlangElements = document.querySelectorAll('zlang');
+    getImage(key) {
+        const images = this.availableImages();
+        if (!images || !images[this.language]) {
+            return null;
+        }
 
+        return images[this.language][key] || null;
+    }
+
+    translatePage() {
+        // Translate text elements
+        const zlangElements = document.querySelectorAll('zlang');
         for (const element of zlangElements) {
             const key = element.getAttribute('key');
             if (key) {
-                const translatedText = await this.translateText(key);
-                element.textContent = translatedText; // Update text content
+                const translatedText = this.translateText(key);
+                element.textContent = translatedText;
             } else {
                 console.warn("<zlang> tag found without 'key' attribute.");
+            }
+        }
+
+        // Translate images
+        const zlangImgElements = document.querySelectorAll('[zlang-img]');
+        for (const element of zlangImgElements) {
+            const key = element.getAttribute('zlang-img');
+            if (key) {
+                const imageSrc = this.getImage(key);
+                if (imageSrc) {
+                    element.src = imageSrc;
+                }
+            } else {
+                console.warn("Element with zlang-img attribute found without a key value.");
             }
         }
     }
 }
 
-// Example usage:
-async function initializeTranslation() {
-    const translator = new zlanguageTranslator(useLang); // Set the desired language
-    await translator.translatePage(); // Translate the page
+// Initialize translation when the DOM is fully loaded
+function initializeTranslation() {
+    const translator = new zlanguageTranslator(useLang);
+    translator.translatePage();
 }
 
-
-// Call initializeTranslation when the DOM is fully loaded:
 document.addEventListener('DOMContentLoaded', initializeTranslation);
 
 /* example
-async function testTranslation() {
+function testTranslation() {
     const translator = new zlanguageTranslator('es'); // Example: Spanish
-    const availableLanguages = await translator.availableLanguage();
-    if (availableLanguages) {
-        console.log("Available Languages:", availableLanguages);
+    const availableLanguages = translator.availableLanguage();
+    console.log("Available Languages:", availableLanguages);
 
-        const translatedText = await translator.translateText("greeting");
-        console.log("Translated greeting:", translatedText);
+    const translatedText = translator.translateText("greeting");
+    console.log("Translated greeting:", translatedText);
 
-        const translatedText2 = await translator.translateText("farewell");
-        console.log("Translated farewell:", translatedText2);
+    const translatedText2 = translator.translateText("farewell");
+    console.log("Translated farewell:", translatedText2);
 
-        const translatedText3 = await translator.translateText("nonexistentKey");
-        console.log("Translated nonexistentKey:", translatedText3);
+    const translatedText3 = translator.translateText("nonexistentKey");
+    console.log("Translated nonexistentKey:", translatedText3);
 
-        const translator2 = new zlanguageTranslator('fr'); // Example: French
-        const translatedText4 = await translator2.translateText("greeting");
-        console.log("Translated greeting in French:", translatedText4);
+    const translator2 = new zlanguageTranslator('fr'); // Example: French
+    const translatedText4 = translator2.translateText("greeting");
+    console.log("Translated greeting in French:", translatedText4);
 
-    }
+    // Example: Get image for current language
+    const logoImage = translator.getImage("logo");
+    console.log("Logo image URL:", logoImage);
 }
 
 testTranslation();*/

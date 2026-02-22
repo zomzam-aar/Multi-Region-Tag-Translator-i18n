@@ -6,11 +6,13 @@ A lightweight, client-side internationalization (i18n) library for JavaScript th
 
 - **Zero Dependencies**: Pure JavaScript implementation
 - **Client-Side Only**: No server-side code required
+- **No CORS Issues**: Language configuration embedded directly in the script
 - **Easy Integration**: Simple HTML tags for translation
-- **JSON Configuration**: Easy-to-manage language files
+- **Image Localization**: Change images based on language
 - **Automatic Translation**: Translates entire pages on load
 - **Multiple Languages**: Support for unlimited languages
 - **Lightweight**: Minimal footprint for fast loading
+- **Synchronous**: No async/await complexity
 
 ## 🚀 Quick Start
 
@@ -21,7 +23,7 @@ A lightweight, client-side internationalization (i18n) library for JavaScript th
    ```html
    <script type="text/javascript" src="./translator.js" zlangu="fr"></script>
    ```
-3. **Add** your language configuration file (`langConfig.json`)
+3. **Edit** `translator.js` to add your translations in the `ZLANG_CONFIG` object
 4. **Use** `<zlang>` tags in your HTML for translatable content
 
 ### Basic Usage
@@ -40,6 +42,8 @@ A lightweight, client-side internationalization (i18n) library for JavaScript th
     <h1><zlang key="title"></zlang></h1>
     <p><zlang key="greeting"></zlang>, <zlang key="name"></zlang>!</p>
     <p><zlang key="farewell"></zlang></p>
+    <!-- Language-specific image -->
+    <img zlang-img="logo" src="./images/default-logo.png" alt="Logo">
 </body>
 </html>
 ```
@@ -49,19 +53,18 @@ A lightweight, client-side internationalization (i18n) library for JavaScript th
 ```
 multi_region/
 ├── index.html          # Example HTML page with translations
-├── translator.js       # Main translation library
-├── langConfig.json     # Language configuration file
+├── translator.js       # Main translation library (includes embedded config)
 └── README.md          # This documentation
 ```
 
 ## ⚙️ Configuration
 
-### Language Configuration (`langConfig.json`)
+### Text Translations (ZLANG_CONFIG)
 
-Define your translations in a JSON file with the following structure:
+Edit the `ZLANG_CONFIG` object in `translator.js` to define your translations:
 
-```json
-{
+```javascript
+const ZLANG_CONFIG = {
     "en": {
         "title": "My Website",
         "greeting": "Hello",
@@ -80,7 +83,31 @@ Define your translations in a JSON file with the following structure:
         "name": "Utilisateur",
         "farewell": "Au revoir"
     }
-}
+};
+```
+
+### Image Localization (ZLANG_IMAGES)
+
+Edit the `ZLANG_IMAGES` object in `translator.js` to define language-specific images:
+
+```javascript
+const ZLANG_IMAGES = {
+    "en": {
+        "logo": "./images/logo-en.png",
+        "banner": "./images/banner-en.jpg",
+        "hero": "./images/hero-en.webp"
+    },
+    "es": {
+        "logo": "./images/logo-es.png",
+        "banner": "./images/banner-es.jpg",
+        "hero": "./images/hero-es.webp"
+    },
+    "fr": {
+        "logo": "./images/logo-fr.png",
+        "banner": "./images/banner-fr.jpg",
+        "hero": "./images/hero-fr.webp"
+    }
+};
 ```
 
 ### Setting the Language
@@ -100,11 +127,23 @@ Specify the target language using the `zlangu` attribute in the script tag:
 
 ### HTML Translation Tags
 
-Use `<zlang>` tags with a `key` attribute to mark translatable content:
+Use `<zlang>` tags with a `key` attribute to mark translatable text content:
 
 ```html
 <zlang key="your_translation_key"></zlang>
 ```
+
+### HTML Image Localization
+
+Use the `zlang-img` attribute on `<img>` tags to swap images based on language:
+
+```html
+<!-- The src will be replaced with the language-specific image -->
+<img zlang-img="logo" src="./images/default-logo.png" alt="Logo">
+<img zlang-img="banner" src="./images/default-banner.jpg" alt="Banner">
+```
+
+The `src` attribute serves as a fallback if no image is defined for the current language.
 
 ## 🔧 How It Works (For Developers)
 
@@ -124,19 +163,29 @@ for (let i = 0; i < lenOf; i++) {
 }
 ```
 
-#### 2. **zlanguageTranslator Class**
+#### 2. **Embedded Configuration**
+All translations and images are embedded directly in the script, eliminating CORS issues:
+
+```javascript
+const ZLANG_CONFIG = { /* text translations */ };
+const ZLANG_IMAGES = { /* image URLs */ };
+```
+
+#### 3. **zlanguageTranslator Class**
 The main class that handles all translation operations:
 
-- **Constructor**: Initializes with target language and config file path
-- **availableLanguage()**: Fetches and caches language data from JSON
+- **Constructor**: Initializes with target language
+- **availableLanguage()**: Returns the embedded language data
+- **availableImages()**: Returns the embedded image data
 - **translateText(key)**: Returns translated text for a specific key
-- **translatePage()**: Automatically translates all `<zlang>` elements on the page
+- **getImage(key)**: Returns image URL for a specific key
+- **translatePage()**: Automatically translates all `<zlang>` elements and `[zlang-img]` images on the page
 
-#### 3. **Automatic Page Translation**
+#### 4. **Automatic Page Translation**
 On DOM ready, the script automatically:
 1. Instantiates the translator with the detected language
-2. Scans for all `<zlang>` elements
-3. Replaces their content with translated text
+2. Scans for all `<zlang>` elements and replaces their content
+3. Scans for all `[zlang-img]` elements and updates their `src` attribute
 
 ```javascript
 document.addEventListener('DOMContentLoaded', initializeTranslation);
@@ -147,18 +196,17 @@ document.addEventListener('DOMContentLoaded', initializeTranslation);
 ```
 1. Page loads → Script detects zlangu attribute
 2. DOM ready → Translator initializes
-3. Fetch langConfig.json → Load language data
-4. Find all <zlang> tags → Extract keys
-5. Translate keys → Replace content
+3. Read embedded ZLANG_CONFIG and ZLANG_IMAGES
+4. Find all <zlang> tags → Replace text content
+5. Find all [zlang-img] elements → Update image sources
 ```
 
 ### Error Handling
 
 The library includes robust error handling for:
-- Missing language configuration files
 - Non-existent languages
 - Missing translation keys
-- Network errors when fetching config
+- Missing image keys (gracefully falls back to default src)
 
 ## 📖 API Reference
 
@@ -175,46 +223,69 @@ new zlanguageTranslator(language)
 ##### `availableLanguage()`
 Returns the language configuration data.
 ```javascript
-const config = await translator.availableLanguage();
+const config = translator.availableLanguage();
+```
+
+##### `availableImages()`
+Returns the image configuration data.
+```javascript
+const images = translator.availableImages();
 ```
 
 ##### `translateText(key)`
 Translates a specific key to the target language.
 ```javascript
-const text = await translator.translateText('greeting');
+const text = translator.translateText('greeting');
+```
+
+##### `getImage(key)`
+Gets the image URL for a specific key in the target language.
+```javascript
+const imageUrl = translator.getImage('logo');
 ```
 
 ##### `translatePage()`
-Automatically translates all `<zlang>` elements on the page.
+Automatically translates all `<zlang>` elements and updates all `[zlang-img]` images on the page.
 ```javascript
-await translator.translatePage();
+translator.translatePage();
 ```
 
 ## 🌐 Adding New Languages
 
-1. **Add translations** to `langConfig.json`:
-   ```json
-   {
-       "existing_languages": "...",
+1. **Add text translations** to `ZLANG_CONFIG` in `translator.js`:
+   ```javascript
+   const ZLANG_CONFIG = {
+       // existing languages...
        "de": {
            "title": "Meine Website",
            "greeting": "Hallo",
            "name": "Benutzer",
            "farewell": "Auf Wiedersehen"
        }
-   }
+   };
    ```
 
-2. **Use the new language** by setting `zlangu="de"` in your script tag
+2. **Add language-specific images** to `ZLANG_IMAGES` in `translator.js` (optional):
+   ```javascript
+   const ZLANG_IMAGES = {
+       // existing languages...
+       "de": {
+           "logo": "./images/logo-de.png",
+           "banner": "./images/banner-de.jpg"
+       }
+   };
+   ```
+
+3. **Use the new language** by setting `zlangu="de"` in your script tag
 
 ## 🔄 Dynamic Language Switching
 
 For dynamic language switching, you can programmatically change languages:
 
 ```javascript
-async function switchLanguage(newLang) {
+function switchLanguage(newLang) {
     const translator = new zlanguageTranslator(newLang);
-    await translator.translatePage();
+    translator.translatePage();
 }
 
 // Switch to Spanish
@@ -231,17 +302,19 @@ switchLanguage('es');
 
 ## 🚀 Performance Considerations
 
-- Language data is **cached** after first load
-- **Async/await** ensures non-blocking operations
-- **Minimal DOM manipulation** for fast rendering
-- **Single JSON file** reduces HTTP requests
+- **No network requests**: All data is embedded, eliminating HTTP latency
+- **No CORS issues**: Works on any server or local files
+- **Synchronous execution**: Faster page rendering
+- **Minimal DOM manipulation**: Efficient element updates
+- **Single script file**: Reduces HTTP requests
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Add your language to `langConfig.json`
-3. Test with your language using `zlangu` attribute
-4. Submit a pull request
+2. Add your language to `ZLANG_CONFIG` in `translator.js`
+3. Optionally add images to `ZLANG_IMAGES`
+4. Test with your language using `zlangu` attribute
+5. Submit a pull request
 
 ## 📄 License
 
@@ -252,14 +325,18 @@ This project is open source and available under the [MIT License](LICENSE).
 ### Common Issues
 
 **Translations not appearing?**
-- Check if `langConfig.json` is accessible
-- Verify the language code in `zlangu` attribute
-- Ensure translation keys exist in the config file
+- Verify the language code in `zlangu` attribute matches a key in `ZLANG_CONFIG`
+- Ensure translation keys exist in the config object
+- Check that `<zlang>` tags have the `key` attribute
+
+**Images not changing?**
+- Verify the language has entries in `ZLANG_IMAGES`
+- Ensure the `zlang-img` attribute value matches a key in the image config
+- Check that image paths are correct
 
 **Console errors?**
 - Check browser console for specific error messages
-- Verify JSON syntax in `langConfig.json`
-- Ensure proper file paths
+- Verify JavaScript syntax in `translator.js`
 
 **Need help?**
 Open an issue in the repository with details about your setup and the problem you're experiencing.
