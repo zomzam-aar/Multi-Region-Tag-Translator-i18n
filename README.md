@@ -88,7 +88,7 @@ const ZLANG_CONFIG = {
 
 ### Image Localization (ZLANG_IMAGES)
 
-Edit the `ZLANG_IMAGES` object in `translator.js` to define language-specific images:
+To localize images, add language-specific image paths to the `ZLANG_IMAGES` object in `translator.js`:
 
 ```javascript
 const ZLANG_IMAGES = {
@@ -109,6 +109,16 @@ const ZLANG_IMAGES = {
     }
 };
 ```
+
+In your HTML, use the `zlang-img` attribute to mark images for localization:
+
+```html
+<img zlang-img="logo" src="./images/default-logo.png" alt="Logo">
+<img zlang-img="banner" src="./images/default-banner.jpg" alt="Banner">
+<img zlang-img="hero" src="./images/default-hero.webp" alt="Hero">
+```
+
+The script will automatically update the `src` attribute based on the selected language.
 
 ### Setting the Language
 

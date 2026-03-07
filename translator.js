@@ -33,15 +33,21 @@ const ZLANG_CONFIG = {
 
 // Embedded image configuration for language-specific images
 const ZLANG_IMAGES = {
-    // Example structure:
-    // "en": {
-    //     "logo": "./images/logo-en.png",
-    //     "banner": "./images/banner-en.jpg"
-    // },
-    // "es": {
-    //     "logo": "./images/logo-es.png",
-    //     "banner": "./images/banner-es.jpg"
-    // }
+    "en": {
+        "logo": "./images/logo-en.png",
+        "banner": "./images/banner-en.jpg",
+        "hero": "./images/hero-en.webp"
+    },
+    "es": {
+        "logo": "./images/logo-es.png",
+        "banner": "./images/banner-es.jpg",
+        "hero": "./images/hero-es.webp"
+    },
+    "fr": {
+        "logo": "./images/logo-fr.png",
+        "banner": "./images/banner-fr.jpg",
+        "hero": "./images/hero-fr.webp"
+    }
 };
 
 class zlanguageTranslator {
